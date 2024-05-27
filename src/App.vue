@@ -1,7 +1,7 @@
 <template>
   <v-container>
-    <v-row class="d-flex justify-center align-center" style="min-height: 100vh">
-      <v-col cols="12" md="6" lg="4">
+    <v-row class="d-flex justify-center mt-5 pt-5" style="min-height: 100vh">
+      <v-col cols="12" md="6" lg="5">
         <v-card title="Upload Area">
           <v-card-text class="d-flex flex-column gap-4">
             <v-text-field
@@ -38,7 +38,7 @@
               v-if="form.use_auth_token"
               v-model="form.auth_token"
               label="Auth token"
-              placeholder="Your api auth token"
+              placeholder="Bearer [your token]"
               required
             ></v-text-field>
 
@@ -53,7 +53,7 @@
               />
 
               <!-- 👉 Upload Photo -->
-              <form class="d-flex flex-column justify-center gap-2">
+              <div class="d-flex flex-column justify-center gap-2">
                 <div class="d-flex flex-wrap gap-2">
                   <v-btn color="primary" @click="uploadPicture">
                     <v-icon icon="mdi-cloud-upload" class="d-sm-none" />
@@ -72,9 +72,18 @@
                 </div>
 
                 <p class="mb-0 gray-text">Only jpg, jpeg, png.</p>
-              </form>
+              </div>
             </div>
           </v-card-text>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12" md="6" lg="5">
+        <!-- Log Area -->
+        <v-card title="Error Log Area" color="red" dark>
+          <v-card-text v-if="logMessage"
+            >{{ logMessageStatus }}<br /><br />{{ logMessage }}</v-card-text
+          >
         </v-card>
       </v-col>
     </v-row>
@@ -123,6 +132,8 @@ export default {
       },
       methods: ["POST", "PUT"],
       refInputEl: null,
+      logMessage: "",
+      logMessageStatus: "",
     };
   },
   methods: {
@@ -171,7 +182,9 @@ export default {
                 });
               }
             } catch (error) {
-              await Swal.fire({
+              console.log(error);
+
+              Swal.fire({
                 toast: true,
                 position: "top",
                 iconColor: "white",
@@ -183,6 +196,10 @@ export default {
                 icon: "error",
                 title: "terjadi kesalahan saat upload gambar!",
               });
+
+              this.logMessageStatus = "Error status: " + error.response.status;
+              this.logMessage =
+                "Response from server: " + JSON.stringify(error.response.data);
             }
           };
         }
