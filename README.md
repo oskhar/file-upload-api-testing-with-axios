@@ -78,7 +78,7 @@ This project is open-source and available under the [MIT License](LICENSE). Feel
 
 ## Contact
 
-For any inquiries or support, please contact the repository maintainer at [your-email@example.com].
+For any inquiries or support, please contact the repository maintainer at muhamadoskhar@gmail.com.
 
 ## Conclusion
 
