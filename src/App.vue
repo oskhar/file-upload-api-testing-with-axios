@@ -36,6 +36,15 @@
               required
             ></v-select>
 
+            <!-- Send As Select -->
+            <v-select
+              v-model="form.send_as"
+              :items="send_as_options"
+              label="Send As"
+              placeholder="Send As Base64 or File"
+              required
+            ></v-select>
+
             <!-- Auth Token Checkbox -->
             <v-checkbox
               v-model="form.use_auth_token"
@@ -52,7 +61,7 @@
             ></v-text-field>
 
             <!-- Avatar and Upload -->
-            <div v-if="form.filetype === 'Image'" class="d-flex gap-4">
+            <div v-if="form.filetype === 'image'" class="d-flex gap-4">
               <!-- 👉 Avatar -->
               <v-avatar
                 rounded="lg"
@@ -64,7 +73,7 @@
               <!-- 👉 Upload Photo -->
               <div class="d-flex flex-column justify-center gap-2">
                 <div class="d-flex flex-wrap gap-2">
-                  <v-btn color="primary" @click="uploadPicture">
+                  <v-btn color="primary" @click="triggerFileUpload">
                     <v-icon icon="mdi-cloud-upload" class="d-sm-none" />
                     <span class="d-none d-sm-block">Send your picture</span>
                   </v-btn>
@@ -74,7 +83,7 @@
                     type="file"
                     :accept="fileAccept"
                     hidden
-                    @input="sendPicture"
+                    @input="sendFile"
                   />
                 </div>
 
@@ -82,8 +91,8 @@
               </div>
             </div>
 
-            <div v-if="form.filetype === 'Excel'" class="d-flex gap-4">
-              <v-btn color="primary" @click="uploadPicture">
+            <div v-if="form.filetype === 'excel'" class="d-flex gap-4">
+              <v-btn color="primary" @click="triggerFileUpload">
                 <v-icon icon="mdi-cloud-upload" class="d-sm-none" />
                 <span class="d-none d-sm-block">Upload Excel</span>
               </v-btn>
@@ -93,7 +102,7 @@
                 type="file"
                 :accept="fileAccept"
                 hidden
-                @input="sendPicture"
+                @input="sendFile"
               />
             </div>
           </v-card-text>
@@ -145,18 +154,20 @@ export default {
   data() {
     return {
       data: {
-        profile_picture: "", // Placeholder for initial Image URL
+        profile_picture: "", // Placeholder for initial image URL
       },
       form: {
-        endpoint: "",
-        parameter_name: "foto_profile",
+        endpoint: "http://localhost:8000/api",
+        parameter_name: "file",
         use_auth_token: true,
-        auth_token: "",
+        auth_token: "Bearer ",
         method: "POST",
-        filetype: "Image",
+        filetype: "image",
+        send_as: "base64",
       },
       methods: ["POST", "PUT"],
-      filetypes: ["Image", "Excel"],
+      filetypes: ["image", "excel"],
+      send_as_options: ["base64", "file"],
       refInputEl: null,
       logMessage: "",
       logMessageStatus: "",
@@ -164,119 +175,106 @@ export default {
   },
   computed: {
     fileAccept() {
-      return this.form.filetype === "Image" ? ".jpeg,.png,.jpg" : ".xlsx,.xls";
+      return this.form.filetype === "image" ? ".jpeg,.png,.jpg" : ".xlsx,.xls";
     },
   },
   methods: {
-    uploadPicture() {
+    triggerFileUpload() {
       this.$refs.refInputEl.click();
     },
-    async sendPicture(event) {
+    async sendFile(event) {
       const file = event.target.files[0];
       if (file) {
-        const fileReader = new FileReader();
-        if (this.form.filetype === "Image") {
-          fileReader.readAsDataURL(file);
-          fileReader.onload = async () => {
-            try {
-              this.data.profile_picture = fileReader.result;
-
-              const formData = new FormData();
-              formData.append(this.form.parameter_name, file);
-
-              const response = await axios({
-                method: this.form.method.toLowerCase(),
-                url: this.form.endpoint,
-                data: formData,
-                headers: this.form.use_auth_token
-                  ? { Authorization: this.form.auth_token }
-                  : {},
-              });
-
-              if (response.data.success) {
-                await Swal.fire({
-                  toast: true,
-                  position: "top",
-                  iconColor: "white",
-                  color: "white",
-                  background: "green",
-                  showConfirmButton: false,
-                  timerProgressBar: true,
-                  timer: 1500,
-                  icon: "success",
-                  title: response.data.success.message,
-                });
-              }
-            } catch (error) {
-              console.log(error);
-
-              Swal.fire({
-                toast: true,
-                position: "top",
-                iconColor: "white",
-                color: "white",
-                background: "red",
-                showConfirmButton: false,
-                timerProgressBar: true,
-                timer: 1500,
-                icon: "error",
-                title: "Terjadi kesalahan saat upload gambar!",
-              });
-
-              this.logMessageStatus = "Error status: " + error.response.status;
-              this.logMessage =
-                "Response from server: " + JSON.stringify(error.response.data);
-            }
-          };
-        } else if (this.form.filetype === "Excel") {
-          try {
-            const formData = new FormData();
-            formData.append(this.form.parameter_name, file);
-
-            const response = await axios({
-              method: this.form.method.toLowerCase(),
-              url: this.form.endpoint,
-              data: formData,
-              headers: this.form.use_auth_token
-                ? { Authorization: this.form.auth_token }
-                : {},
-            });
-
-            if (response.data.success) {
-              await Swal.fire({
-                toast: true,
-                position: "top",
-                iconColor: "white",
-                color: "white",
-                background: "green",
-                showConfirmButton: false,
-                timerProgressBar: true,
-                timer: 1500,
-                icon: "success",
-                title: response.data.success.message,
-              });
-            }
-          } catch (error) {
-            console.log(error);
-
-            Swal.fire({
-              toast: true,
-              position: "top",
-              iconColor: "white",
-              color: "white",
-              background: "red",
-              showConfirmButton: false,
-              timerProgressBar: true,
-              timer: 1500,
-              icon: "error",
-              title: "Terjadi kesalahan saat upload file!",
-            });
-
-            this.logMessageStatus = "Error status: " + error.response.status;
-            this.logMessage =
-              "Response from server: " + JSON.stringify(error.response.data);
-          }
+        if (this.form.send_as === "base64") {
+          await this.sendAsBase64(file);
+        } else {
+          await this.sendAsFile(file);
         }
+      }
+    },
+    async sendAsBase64(file) {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onload = async () => {
+        try {
+          this.data.profile_picture = fileReader.result;
+
+          const formData = new FormData();
+          formData.append(this.form.parameter_name, fileReader.result);
+
+          const response = await this.sendRequest(formData);
+
+          if (response.data.success) {
+            this.showSuccess(response.data.success.message);
+          }
+        } catch (error) {
+          this.handleError(error);
+        }
+      };
+    },
+    async sendAsFile(file) {
+      const formData = new FormData();
+      formData.append(this.form.parameter_name, file);
+
+      try {
+        const response = await this.sendRequest(formData);
+
+        if (response.data.success) {
+          this.showSuccess(response.data.success.message);
+        }
+      } catch (error) {
+        this.handleError(error);
+      }
+    },
+    async sendRequest(data) {
+      const headers = this.form.use_auth_token
+        ? { Authorization: `${this.form.auth_token}` }
+        : {};
+
+      return await axios({
+        method: this.form.method.toLowerCase(),
+        url: this.form.endpoint,
+        data: data,
+        headers: headers,
+      });
+    },
+    showSuccess(message) {
+      Swal.fire({
+        toast: true,
+        position: "top",
+        iconColor: "white",
+        color: "white",
+        background: "green",
+        showConfirmButton: false,
+        timerProgressBar: true,
+        timer: 1500,
+        icon: "success",
+        title: message,
+      });
+    },
+    handleError(error) {
+      console.log(error);
+
+      Swal.fire({
+        toast: true,
+        position: "top",
+        iconColor: "white",
+        color: "white",
+        background: "red",
+        showConfirmButton: false,
+        timerProgressBar: true,
+        timer: 1500,
+        icon: "error",
+        title: "Terjadi kesalahan saat upload file!",
+      });
+
+      if (error.response) {
+        this.logMessageStatus = "Error status: " + error.response.status;
+        this.logMessage =
+          "Response from server: " + JSON.stringify(error.response.data);
+      } else {
+        this.logMessageStatus = "Error status: Unknown";
+        this.logMessage = "Error message: " + error.message;
       }
     },
   },
