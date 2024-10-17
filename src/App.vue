@@ -60,6 +60,60 @@
               required
             ></v-text-field>
 
+            <!-- Add Parameters Button -->
+            <v-btn color="primary" @click="showParamModal = true">
+              Tambah Parameter
+            </v-btn>
+
+            <!-- Modal for adding parameters -->
+            <v-dialog v-model="showParamModal" max-width="500">
+              <v-card>
+                <v-card-title class="headline">Tambah Parameter</v-card-title>
+                <v-card-text>
+                  <v-container>
+                    <v-row
+                      v-for="(param, index) in form.additionalParams"
+                      :key="index"
+                    >
+                      <v-col cols="5">
+                        <v-text-field
+                          v-model="param.key"
+                          label="Key"
+                          placeholder="Enter key"
+                          required
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="5">
+                        <v-text-field
+                          v-model="param.value"
+                          label="Value"
+                          placeholder="Enter value"
+                          required
+                        ></v-text-field>
+                      </v-col>
+                      <v-col cols="2">
+                        <v-btn icon @click="removeParam(index)">
+                          <v-icon>mdi-delete</v-icon>
+                        </v-btn>
+                      </v-col>
+                    </v-row>
+                    <v-btn color="primary" @click="addParam">
+                      <v-icon left>mdi-plus</v-icon> Tambah Parameter
+                    </v-btn>
+                  </v-container>
+                </v-card-text>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn
+                    color="green darken-1"
+                    text
+                    @click="showParamModal = false"
+                    >Tutup</v-btn
+                  >
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
+
             <!-- Avatar and Upload -->
             <div v-if="form.filetype === 'image'" class="d-flex gap-4">
               <!-- 👉 Avatar -->
@@ -133,6 +187,7 @@ import {
   VTextField,
   VSelect,
   VCheckbox,
+  VDialog,
 } from "vuetify/components";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -150,11 +205,12 @@ export default {
     VTextField,
     VSelect,
     VCheckbox,
+    VDialog,
   },
   data() {
     return {
       data: {
-        profile_picture: "", // Placeholder for initial image URL
+        profile_picture: "",
       },
       form: {
         endpoint: "http://localhost:8000/api",
@@ -164,10 +220,12 @@ export default {
         method: "POST",
         filetype: "image",
         send_as: "base64",
+        additionalParams: [], // For additional key-value parameters
       },
       methods: ["POST", "PUT"],
       filetypes: ["image", "excel"],
       send_as_options: ["base64", "file"],
+      showParamModal: false, // Modal visibility state
       refInputEl: null,
       logMessage: "",
       logMessageStatus: "",
@@ -202,6 +260,8 @@ export default {
           const formData = new FormData();
           formData.append(this.form.parameter_name, fileReader.result);
 
+          this.appendAdditionalParams(formData); // Append additional params
+
           const response = await this.sendRequest(formData);
 
           if (response.data.success) {
@@ -215,6 +275,8 @@ export default {
     async sendAsFile(file) {
       const formData = new FormData();
       formData.append(this.form.parameter_name, file);
+
+      this.appendAdditionalParams(formData); // Append additional params
 
       try {
         const response = await this.sendRequest(formData);
@@ -237,6 +299,18 @@ export default {
         data: data,
         headers: headers,
       });
+    },
+    appendAdditionalParams(formData) {
+      // Append additional key-value params to the FormData
+      this.form.additionalParams.forEach((param) => {
+        formData.append(param.key, param.value);
+      });
+    },
+    addParam() {
+      this.form.additionalParams.push({ key: "", value: "" });
+    },
+    removeParam(index) {
+      this.form.additionalParams.splice(index, 1);
     },
     showSuccess(message) {
       Swal.fire({
