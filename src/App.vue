@@ -159,6 +159,26 @@
                 @input="sendFile"
               />
             </div>
+            <!-- Tambahkan di bawah blok excel -->
+
+            <div v-if="form.filetype === 'audio'" class="d-flex gap-4">
+              <v-btn color="primary" @click="triggerFileUpload">
+                <v-icon icon="mdi-cloud-upload" class="d-sm-none" />
+                <span class="d-none d-sm-block">Upload Audio</span>
+              </v-btn>
+
+              <input
+                ref="refInputEl"
+                type="file"
+                :accept="fileAccept"
+                hidden
+                @input="sendFile"
+              />
+
+              <p v-if="form.filetype === 'audio'" class="mb-0 gray-text">
+                Hanya file audio (mp3, wav, ogg)
+              </p>
+            </div>
           </v-card-text>
         </v-card>
       </v-col>
@@ -223,7 +243,7 @@ export default {
         additionalParams: [], // For additional key-value parameters
       },
       methods: ["POST", "PUT"],
-      filetypes: ["image", "excel"],
+      filetypes: ["image", "excel", "audio"],
       send_as_options: ["base64", "file"],
       showParamModal: false, // Modal visibility state
       refInputEl: null,
@@ -233,7 +253,14 @@ export default {
   },
   computed: {
     fileAccept() {
-      return this.form.filetype === "image" ? ".jpeg,.png,.jpg" : ".xlsx,.xls";
+      if (this.form.filetype === 'image') {
+        return ".jpeg,.png,.jpg"
+      } else if (this.form.filetype === 'excel') {
+        return ".xlsx,.xls"
+      } else if (this.form.filetype === 'audio') {
+        return ".mp3,.wav,.ogg"
+      }
+      return ""
     },
   },
   methods: {
